@@ -1,0 +1,177 @@
+
+
+
+#include <QTimer>
+#include <QTime>
+
+QSerialPort* initializationArduinoDevice() {
+
+    QSerialPort *arduino = new QSerialPort;
+    static const quint16 arduino_uno_vendor_id = 9025;
+    static const quint16 arduino_uno_product_id = 66;
+    QString arduino_port_name = "";
+    bool arduino_is_available = false;
+
+    //**************************   Conect   ****************************
+    qDebug() << "Number of available ports: " << QSerialPortInfo::availablePorts().length();
+    foreach(const QSerialPortInfo &serialPortInfo, QSerialPortInfo::availablePorts()) {
+        qDebug()<< endl << "Has vendor ID: " << serialPortInfo.hasVendorIdentifier();
+        if(serialPortInfo.hasVendorIdentifier()) {
+            qDebug() << "Vendor ID: " << serialPortInfo.vendorIdentifier();
+        }
+        qDebug() << "Has Product ID: " << serialPortInfo.hasProductIdentifier();
+        if(serialPortInfo.hasProductIdentifier()) {
+            qDebug() << "Product ID: " << serialPortInfo.productIdentifier();
+        }
+    }
+
+    foreach(const QSerialPortInfo &serialPortInfo, QSerialPortInfo::availablePorts()) {
+        if(serialPortInfo.hasVendorIdentifier() && serialPortInfo.hasProductIdentifier()) {
+            if(serialPortInfo.vendorIdentifier() == arduino_uno_vendor_id) {
+                if(serialPortInfo.productIdentifier() == arduino_uno_product_id) {
+                    arduino_port_name = serialPortInfo.portName();
+                    arduino_is_available = true;
+                    qDebug() << "Conect: yes" ;
+                }
+            }
+        }
+    }
+
+    if(arduino_is_available) {
+        // open and configure the serialport
+        arduino->setPortName(arduino_port_name);
+        arduino->open(QSerialPort::ReadWrite);
+        arduino->setBaudRate(QSerialPort::Baud115200);
+        arduino->setDataBits(QSerialPort::Data8);
+        arduino->setParity(QSerialPort::NoParity);
+        arduino->setStopBits(QSerialPort::OneStop);
+        arduino->setFlowControl(QSerialPort::NoFlowControl);
+        qDebug() << "Inicialization: yes" ;
+        return arduino;
+    } else {
+        // give error Mes if not available
+        qDebug() << "Port error, Couldn't find the Arduino!";
+        return NULL;
+    }
+    //**************************   end Conect   ****************************
+}
+
+
+class ISerial { // используется в компьютерной версии программы
+    QSerialPort* arduino = initializationArduinoDevice();
+  public:
+    ISerial() {}
+
+    byte read() {
+        QByteArray QBAtest = arduino->read(1);
+        return QBAtest[1];
+    }
+
+    /*void write(byte ol_buffeRTotal[UMCP_MAX_PACKET_SIZE], unsigned int ol_cnt = 0) {
+        if (ol_cnt > UMCP_MAX_PACKET_SIZE) {
+            QByteArray QBAi = QByteArray(*ol_buffeRTotal,1);
+            arduino->write(QBAi);
+        }
+    }*/
+
+    void write(byte ol_buffer, unsigned int ol_cnt = 0) {
+        //if (ol_cnt > UMCP_MAX_PACKET_SIZE) {
+            QByteArray QBAi = QByteArray(ol_buffer,1);
+            arduino->write(QBAi);
+        //}
+    }
+
+    size_t available() {
+        return arduino->bytesAvailable();
+    }
+	
+	void printConsol(const char* ol_buffer) {
+		
+	}
+
+};
+
+class DataTransmissionPC :: DataTransmission {
+
+std::vector<float> vAdjAngle;
+public:
+
+  void inputVFullAngle() {  
+    size_t startVal = 5; //начало приёма значений из пакета n - хз какое. надо смотреть структуру пакета с флотами
+    //size_t focusIter = startVal + 1;           // итератор с которого продолжается заполнение массива. он не нужен если мы всегда вставляем в конец
+    commonType bufPacket;    
+    for(size_t i = startVal; i < sizeReceivedMes; i += 4) {
+      for(size_t j = 0; j < 4; ++j) {
+        bufPacket.byte[j] = receivedMes[i + startVal + j];
+      }
+      vAdjAngle.push_back(bufPacket.commonVar); // значение из масива значений которые мы приняли;
+    }
+    //sendComand(GET_FULL_ANGLE);
+  }
+
+  ExitCode getMasFullAngle(float* mas, size_t & size) { //***дописать***   эта функция вызывается с компьютера. и запускает процесс в результате которого на компьютере должен быть массив данных полного угла
+    formingDataPacket(GET_FULL_ANGLE);
+    if (sendPacket()) { // чооооо ????
+      //if(ecConfirmGetMasFullAngle == END_CODE) {
+      bool fFinal = false;
+      Comand ccRecMes = NULL;
+      //size_t focusIter = 0;
+      while(!fFinal && fConnection) { //цикл пока не завершающий флаг/  или не флаг ошибки или не флаг дооолгого таймера.       // вроде можно вынести в отдельную функцию
+        ExitCode ecInsideRecMes = insideRecMes(); //принимаем пакет.
+        switch(ecInsideRecMes) {
+          case END_CODE:
+            ccRecMes = getComandRecMes();
+            switch(ccRecMes) {         //   расбираем его.
+              case MASS_VOUT:
+                inputVFullAngle(); 
+				//точно ли так?
+                formingDataPacket(CONFIRM);
+                sendPacket(false); //отправить подтверждение                
+                break;
+              case END_FULL_ANGLE:
+                fFinal = true; //масив получен. завершаем работу фуункции;
+                formingDataPacket(CONFIRM);
+                sendPacket(false); //отправить подтверждение  
+                break;
+              default:
+                std::cout << "getComandRecMes default, wtf? \n";
+                return ccRecMes;
+                break;
+            }
+                                              //***дописать***
+            break;
+          case ERR_CODE:
+          //отправляем вместо подтверждения - ошибку. нам отправляют повторно. ловим ответку
+			formingDataPacket(ERR);
+			sendPacket(false);
+            return ERR_CODE; 
+            break;
+          case TIMER_CODE:
+          //дисконект?
+			formingDataPacket(ERR);
+			sendPacket(false);
+            return TIMER_CODE; 
+            break;
+          default:
+			printConsol("insideRecMes default, wtf? \n");   
+			formingDataPacket(ERR);
+			sendPacket(false);			
+            return ecInsideRecMes; 
+            break;
+        }
+
+      }            
+    } else {
+      return ERR_CODE; // если что то пошло не так то возвращаем ERR
+    }    
+  }
+  
+  };
+  
+  
+  
+  
+  
+  
+  
+  
