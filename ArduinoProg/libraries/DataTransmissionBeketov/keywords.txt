@@ -1,0 +1,65 @@
+#######################################
+# Syntax Coloring Map For Ethernet
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+Meter	KEYWORD1	Meter
+Stepper	KEYWORD1	Stepper
+Interface	KEYWORD1	Interface
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+setFocusSections	KEYWORD2
+getRTotal	KEYWORD2
+getQuadraticAverageVout	KEYWORD2
+getVin	KEYWORD2
+getADCsignals	KEYWORD2
+getfValidation	KEYWORD2
+getPriceBit	KEYWORD2
+getAverageVout	KEYWORD2
+MeasureVout	KEYWORD2
+MeasureBitADC	KEYWORD2
+chooseReference	KEYWORD2
+measureRTotal	KEYWORD2
+insideArrVout	KEYWORD2
+ZeroingCounterSteps	KEYWORD2
+getReduction	KEYWORD2
+getPStep	KEYWORD2
+getCounterSteps	KEYWORD2
+getCounterAngle	KEYWORD2
+getSocketNumber	KEYWORD2
+getPower	KEYWORD2
+getDir	KEYWORD2
+getPDir	KEYWORD2
+getCountStepsOnFull	KEYWORD2
+setReduction	KEYWORD2
+invDir	KEYWORD2
+setDir	KEYWORD2
+setPower	KEYWORD2
+setTimeStop	KEYWORD2
+moveStep	KEYWORD2
+moveToPosition	KEYWORD2
+movePercentagesAngle	KEYWORD2
+moveSteps	KEYWORD2
+getCoordContctPlatformMinStrt	KEYWORD2
+getCoordContctPlatformMinEnd	KEYWORD2
+getCoordContctPlatformMaxStrt	KEYWORD2
+getCoordContctPlatformMaxEnd	KEYWORD2
+getRTotal KEYWORD2
+getCoordinatesBorderAdjAngl KEYWORD2
+getCoordinatesBorderFulAngl KEYWORD2
+insideCoordContctPlatform KEYWORD2
+getAdjAngl KEYWORD2
+getFullAdjAngl KEYWORD2
+getFCh KEYWORD2
+moveToVout KEYWORD2
+getNonlinearity KEYWORD2
+sendMeasureVout KEYWORD2
+
+#######################################
+

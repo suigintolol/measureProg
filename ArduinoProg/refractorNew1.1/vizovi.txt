@@ -1,0 +1,81 @@
+
+
+
+ПЕКА
+	getMasFullAngle
+		formingDataPacket(GET_FULL_ANGLE)
+		sendPacket()
+			getConfirm()
+				insideRecMes
+					insideBuf
+						END_CODE
+						TIMER_CODE
+					insIterStartMes
+					END_CODE 	- если пакет целый
+					ERR_CODE 	- если пакет НЕ целый
+				-ERR_CODE
+				-TIMER_CODE 	- если вернулся с insideRecMes TIMER_CODE
+				getComandRecMes()
+				END_CODE 	- если в команде пакета, который мы приняли, подтверждение
+				ERR_CODE 	- если в команде пакета, который мы приняли, НЕ подтверждение
+			END_CODE 	- если  ответка пришла и всё норм
+			TIMER_CODE 	- если таймер  пробуем ещё раз
+			ERR_CODE 	- что то пошло не так пакет нажо отправить заново
+		
+	FOR (пока не завершающий флаг) 
+		insideRecMes
+			insideBuf
+				END_CODE
+				TIMER_CODE
+			insIterStartMes
+			END_CODE 	- если пакет целый				
+			ERR_CODE 	- если пакет НЕ целый
+		getComandRecMes()
+		inputVAdjAngle()
+		formingDataPacket(CONFIRM)
+		sendPacket(false) 		
+		
+	END FOR
+
+
+АРДУИНА
+	inputModeARD()
+		FOR
+		Serial.available()
+		getComandRecMes()
+		sendMasFullAngle()
+			FOR
+				insideArrVout()
+				AddBuf(getAverVout())
+					getChecksum()
+					sendPacket()
+					!END_CODE 	- что пришло с sendPacket()
+					END_CODE
+				getChecksum()
+				sendPacket() 	-на последнее сообщение
+			END FOR
+			formingDataPacket(END_FULL_ANGLE)
+			sendPacket()
+				getConfirm()
+					insideRecMes
+						insideBuf
+							END_CODE
+							TIMER_CODE
+						insIterStartMes
+						END_CODE 	- если пакет целый
+						ERR_CODE 	- если пакет НЕ целый
+					-ERR_CODE
+					-TIMER_CODE 	- если вернулся с insideRecMes TIMER_CODE
+					getComandRecMes()
+					END_CODE 	- если в команде пакета, который мы приняли, подтверждение
+					ERR_CODE 	- если в команде пакета, который мы приняли, НЕ подтверждение
+				END_CODE 	- если  ответка пришла и всё норм
+				TIMER_CODE 	- если таймер  пробуем ещё раз
+				ERR_CODE 	- что то пошло не так пакет нажо отправить заново	
+			END_CODE
+		END FOR
+			
+			
+			
+			
+			

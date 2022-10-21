@@ -1,0 +1,155 @@
+
+
+
+
+
+class ISerial { // используется в компьютерной версии программы
+    QSerialPort* arduino = initializationArduinoDevice();
+  public:
+    ISerial() {}
+
+    byte read() {
+        QByteArray QBAtest = arduino->read(1);
+        return QBAtest[1];
+    }
+
+    /*void write(byte ol_buffeRTotal[UMCP_MAX_PACKET_SIZE], unsigned int ol_cnt = 0) {
+        if (ol_cnt > UMCP_MAX_PACKET_SIZE) {
+            QByteArray QBAi = QByteArray(*ol_buffeRTotal,1);
+            arduino->write(QBAi);
+        }
+    }*/
+
+    void write(byte ol_buffer, unsigned int ol_cnt = 0) {
+        //if (ol_cnt > UMCP_MAX_PACKET_SIZE) {
+            QByteArray QBAi = QByteArray(ol_buffer,1);
+            arduino->write(QBAi);
+        //}
+    }
+
+    size_t available() {
+        return arduino->bytesAvailable();
+    }
+
+	void printConsol(const char* ol_buffer) {
+		
+	}
+
+};
+
+class DataTransmissionARD :: DataTransmission {
+
+public:
+
+  ExitCode sendMasFullAngle() { // функция по которой мы запускаем процесс передачи массива полного угла. (те вместе с границами контактных площадок) //должна выполняться SLAVE
+    Fend = false;
+    for ((!Fend) && (Fconnect)) { // пока не найдём полный угол (потом передадим его)
+      if(insideArrVout()) { 
+        ExitCode ec = AddBuf(getAverVout());
+        if(ec == END_CODE) {
+          //Всё ок
+        } else {
+          Fconnect = false;
+        }
+      } else {  //дошли до конца
+        //сделать КР и тд
+        sendMes[0] = '#';
+        sendMes[1] = sizeSendMes;
+        sendMes[2] = idMes;
+        sendMes[3] = MASS_VOUT; //какой команд?
+        sendMes[sizeSendMes] = '$';
+        sendMes[4] = getChecksum(sendMes, sizeSendMes); //считаем чексумму
+        ExitCode ecFloatPacket = sendPacket(); 
+        if(ecFloatPacket == END_CODE) {
+          Fend = true;
+          //Подготовить буфер Отправки для работы с следующим итератором();      
+          sizeSendMes = 5;    //  начало данных.
+          idMes++;
+        } else {
+          Fconnect = false;
+          Return ecFloatPacket;
+        }
+      }
+    }
+    formingDataPacket(END_FULL_ANGLE);
+    ExitCode ecEndFloatPacket = sendPacket();
+    if(ecEndFloatPacket == END_CODE) {
+      return END_CODE;
+    } else {
+      return ecEndFloatPacket;
+    }
+  }
+
+  ExitCode AddBuf(float val) { // добавляет элемент в буфер. или если буфер полный то отправляет его и возвращает результат, успешно или не успешно //должна выполняться SLAVE
+    union commonType {
+      long commonVar;
+      byte myByte[4];
+    };
+    commonType bufPacket;
+    bufPacket.commonVar = val;
+    for (size_t  i = 0; i < 4: i++) {
+      sendMes[sizeSendMes++] = bufPacket[i]; //buf это буфер на отправку
+    }
+    if!(sizeSendMes < sizeSendBuf) {
+      // места нет!,Надо отправить
+      sizeSendMes++; //для вставки доллара
+      sendMes[0] = '#';
+      sendMes[1] = sizeSendMes;
+      sendMes[2] = idMes;
+      sendMes[3] = MASS_VOUT; //какой команд?
+      sendMes[sizeSendMes] = '$';
+      sendMes[4] = getChecksum(sendMes, sizeSendMes); //считаем чексумму
+      ExitCode ecSendPacket = sendPacket(); // отправляем, получая код
+      if(ecSendPacket != END_CODE) {
+        Return ecSendPacket;
+      } else {
+        //Подготовить буфер Отправки для работы с следующим итератором();      
+        sizeSendMes = 5;    //  начало данных.
+        idMes++;
+      }      
+    } else {
+      //Есть место для следующей итерации
+    }
+    Return END_CODE;
+  }
+
+  void inputModeARD() { // тут будет бесконечный цикл в котором мы будем принимать данные от компухтера. //должна выполняться SLAVE
+    Comand ccRecMes = NULL.
+    while(1) {
+      if(Serial.available()) {
+        //раскидать данные на пакет и проверить правильность ( эти функции уже имеются)
+        ccRecMes = getComandRecMes();
+        switch(ccRecMes) {         //   расбираем его.
+                //case CUST_COMAND:
+                //  break;
+                case GET_VOUT:
+                  break;
+                case GET_FULL_ANGLE:
+                  // надо отправить подтверждение по хорошему .
+                  sendMasFullAngle();           // может стоит добавить условие всё ли прошло гладко. но вопрос. а делать то что если пошло не так. наверное стоит отправить код ошибки
+                  break;
+                //case END_FULL_ANGLE:              // его отправит ардуинка после отправки последнего пакета с массивом данных
+                //  break;
+                case GET_IND:
+                  break;
+                case TAKE_STEPS:
+                  break;
+                case MOVE_POSITION:
+                  break;
+                //case CONFIRM:
+                //  break;
+                case ERR:
+                  break;
+                default:
+                  break;
+        }
+      }
+    }
+  }
+
+};
+
+
+
+
+
